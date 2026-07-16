@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BR Production Bin Tracking</title>
-    <!-- Tailwind CSS for clean layout utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Define custom green color variables and apply styles */
         :root {
             --brand-green: #6BF4AD;
             --brand-green-hover: #56dca2;
@@ -17,29 +15,25 @@
         .hover\:bg-brand-hover:hover { background-color: var(--brand-green-hover); }
         .focus\:ring-brand:focus { --tw-ring-color: var(--brand-green); }
         
-        /* Prevents double-tap zooming on mobile touch targets */
         button { touch-action: manipulation; }
     </style>
 </head>
+    
 <body class="bg-gray-50 min-h-screen text-gray-800 pb-12 select-none">
 
-    <!-- Header styled in requested brand green with high-contrast text -->
     <header class="bg-brand text-gray-900 shadow-md p-4 sticky top-0 z-50">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <!-- Swapped Emoji out for your repository's local logo asset -->
                 <img src="bleacher_black.png" alt="Logo" class="h-8 w-auto object-contain">
-                <h1 id="binHeader" class="text-lg font-bold tracking-tight">Bin: Loading...</h1>
+                <h1 id="binHeader" class="text-lg font-bold tracking-tight">Production Bin: Loading...</h1>
             </div>
             <span id="loadingSpinner" class="animate-spin h-5 w-5 border-2 border-gray-900 border-t-transparent rounded-full hidden"></span>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-3 space-y-3">
-        <!-- Error alert overlay if connection fails -->
         <div id="errorAlert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative hidden" role="alert"></div>
 
-        <!-- Add Item Row Card - Fluid width container -->
         <div class="bg-white rounded-xl shadow p-3">
             <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Add New Item</h2>
             <div class="flex gap-2">
@@ -59,14 +53,12 @@
                 <span id="itemCount" class="text-xs text-gray-500 font-medium">0 items</span>
             </div>
             <ul id="inventoryList" class="divide-y divide-gray-100">
-                <!-- Items are programmatically injected here -->
                 <li class="p-8 text-center text-gray-400 italic text-sm">No items found. Tap "+" above to log some!</li>
             </ul>
         </div>
     </main>
 
     <script>
-        // REPLACE WITH YOUR COPIED GOOGLE APPS SCRIPT DEPLOYMENT URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztE36-ep91fpfYaFDzraCC5Hw4qcwcBDew_YxVRPT_ZtsgCVWRxJwQCmiS_NEcSteUYw/exec";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -76,7 +68,6 @@
 
         let cachedItems = [];
 
-        // Fetch Items from Google Sheets via Web App API
         async function fetchInventory() {
             showLoading(true);
             try {
@@ -91,7 +82,6 @@
             }
         }
 
-        // Render responsive list interface elements
         function renderInventory() {
             const listContainer = document.getElementById("inventoryList");
             const countContainer = document.getElementById("itemCount");
@@ -105,7 +95,6 @@
 
             cachedItems.forEach(item => {
                 const li = document.createElement("li");
-                // Uses flexbox wrapping controls and small padding to fit narrow phone screens perfectly
                 li.className = "flex items-center justify-between p-3 gap-2 hover:bg-gray-50 text-sm";
                 li.innerHTML = `
                     <div class="flex-1 min-w-0">
@@ -125,7 +114,7 @@
             });
         }
 
-        // Add Item
+        // ADD ITEM
         async function addNewItem() {
             const qtyInput = document.getElementById("newItemQty");
             const nameInput = document.getElementById("newItemName");
@@ -145,7 +134,7 @@
             }
         }
 
-        // Quick Adjust quantity buttons
+        // ADJUST QUANTITY
         async function adjustQty(rowIndex, delta) {
             const targetItem = cachedItems.find(i => i.rowIndex === rowIndex);
             if (!targetItem) return;
@@ -160,7 +149,7 @@
             }
         }
 
-        // Update Text on Input Change
+        // UPDATE ITEM ON NEW ADD
         async function updateItemField(rowIndex, field, value) {
             const targetItem = cachedItems.find(i => i.rowIndex === rowIndex);
             if (!targetItem) return;
@@ -180,7 +169,7 @@
             }
         }
 
-        // Delete Item Row
+        // DELETE ITEM
         async function deleteItem(rowIndex) {
             if (!confirm("Are you sure you want to remove this item?")) return;
             showLoading(true);
@@ -192,7 +181,7 @@
             }
         }
 
-        // Helper API Poster
+        // API HELPER
         async function sendUpdate(payload) {
             const response = await fetch(SCRIPT_URL, {
                 method: "POST",
