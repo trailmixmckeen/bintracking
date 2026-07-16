@@ -64,7 +64,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const currentBin = urlParams.get('bin') || "BIN01"; 
 
-        document.getElementById("binHeader").textContent = `Bin: ${currentBin}`;
+        document.getElementById("binHeader").textContent = `Selected Production Bin: ${currentBin}`;
 
         let cachedItems = [];
 
