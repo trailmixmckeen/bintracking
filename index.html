@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BR Production Bin Tracking</title>
+    <!-- Tailwind CSS for beautiful, clean mobile layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Prevents double-tap zooming on mobile edit buttons */
+        button { touch-action: manipulation; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 pb-20">
+
+    <header class="bg-emerald-600 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 id="binHeader" class="text-xl font-bold tracking-wide">📦 Loading Bin...</h1>
+            <span id="loadingSpinner" class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full hidden"></span>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-4">
+        <!-- Error alert if any -->
+        <div id="errorAlert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden" role="alert"></div>
+
+        <!-- Add Item Row Card -->
+        <div class="bg-white rounded-xl shadow p-4">
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Add New Item</h2>
+            <div class="flex gap-2">
+                <input type="number" id="newItemQty" placeholder="Qty" value="1" class="w-20 border border-gray-300 rounded-lg px-3 py-2 text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <input type="text" id="newItemName" placeholder="Item name..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <button onclick="addNewItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold transition-all">+</button>
+            </div>
+        </div>
+
+        <!-- Inventory List Container -->
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="px-4 py-3 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Inventory</span>
+                <span id="itemCount" class="text-xs text-gray-500">0 items</span>
+            </div>
+            <ul id="inventoryList" class="divide-y divide-gray-200">
+                <!-- Items inserted here dynamically -->
+                <li class="p-8 text-center text-gray-400 italic">No items found. Tap "+" above to log some!</li>
+            </ul>
+        </div>
+    </main>
+
+    <script>
+        // REPLACE WITH YOUR COPIED GOOGLE APPS SCRIPT DEPLOYMENT URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztE36-ep91fpfYaFDzraCC5Hw4qcwcBDew_YxVRPT_ZtsgCVWRxJwQCmiS_NEcSteUYw/exec";
+
+        // Read URL parameter to know which bin we are tracking (e.g. ?bin=BIN01)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentBin = urlParams.get('bin') || "BIN01"; 
+
+        document.getElementById("binHeader").textContent = `📦 Bin: ${currentBin}`;
+
+        let cachedItems = [];
+
+        // Fetch Items from Google Sheets via Web App API
+        async function fetchInventory() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${SCRIPT_URL}?bin=${currentBin}`);
+                const data = await response.json();
+                cachedItems = data.items || [];
+                renderInventory();
+            } catch (err) {
+                showError("Could not retrieve spreadsheet data. Ensure the Apps Script URL is correct.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Render standard interface lists
+        function renderInventory() {
+            const listContainer = document.getElementById("inventoryList");
+            const countContainer = document.getElementById("itemCount");
+            listContainer.innerHTML = "";
+            countContainer.textContent = `${cachedItems.length} items`;
+
+            if (cachedItems.length === 0) {
+                listContainer.innerHTML = `<li class="p-8 text-center text-gray-400 italic">No items found. Tap "+" above to log some!</li>`;
+                return;
+            }
+
+            cachedItems.forEach(item => {
+                const li = document.createElement("li");
+                li.className = "flex items-center justify-between p-4 hover:bg-gray-50";
+                li.innerHTML = `
+                    <div class="flex-1 min-w-0 pr-4">
+                        <input type="text" value="${item.item}" onchange="updateItemField(${item.rowIndex}, 'item', this.value)" 
+                               class="w-full font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-emerald-500 focus:bg-white focus:outline-none rounded px-1 transition-all">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="adjustQty(${item.rowIndex}, -1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:scale-95 rounded-full text-lg font-semibold">-</button>
+                        <span class="w-8 text-center font-bold text-gray-800 text-lg">${item.quantity}</span>
+                        <button onclick="adjustQty(${item.rowIndex}, 1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:scale-95 rounded-full text-lg font-semibold">+</button>
+                        <button onclick="deleteItem(${item.rowIndex})" class="ml-2 text-red-400 hover:text-red-600 p-1">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // Add Item
+        async function addNewItem() {
+            const qtyInput = document.getElementById("newItemQty");
+            const nameInput = document.getElementById("newItemName");
+            const qty = parseInt(qtyInput.value) || 1;
+            const name = nameInput.value.trim();
+
+            if (!name) return;
+
+            showLoading(true);
+            try {
+                await sendUpdate({ bin: currentBin, action: "add", quantity: qty, item: name });
+                nameInput.value = "";
+                qtyInput.value = "1";
+                await fetchInventory();
+            } catch (err) {
+                showError("Failed to add item.");
+            }
+        }
+
+        // Quick Adjust quantity buttons
+        async function adjustQty(rowIndex, delta) {
+            const targetItem = cachedItems.find(i => i.rowIndex === rowIndex);
+            if (!targetItem) return;
+            const newQty = Math.max(0, parseInt(targetItem.quantity) + delta);
+            
+            showLoading(true);
+            try {
+                await sendUpdate({ bin: currentBin, action: "update", rowIndex: rowIndex, quantity: newQty, item: targetItem.item });
+                await fetchInventory();
+            } catch (err) {
+                showError("Failed to update quantity.");
+            }
+        }
+
+        // Update Text on Input Blur/Change
+        async function updateItemField(rowIndex, field, value) {
+            const targetItem = cachedItems.find(i => i.rowIndex === rowIndex);
+            if (!targetItem) return;
+            
+            showLoading(true);
+            try {
+                await sendUpdate({ 
+                    bin: currentBin, 
+                    action: "update", 
+                    rowIndex: rowIndex, 
+                    quantity: field === 'qty' ? value : targetItem.quantity, 
+                    item: field === 'item' ? value : targetItem.item 
+                });
+                await fetchInventory();
+            } catch (err) {
+                showError("Failed to update item name.");
+            }
+        }
+
+        // Delete Item Row
+        async function deleteItem(rowIndex) {
+            if (!confirm("Are you sure you want to remove this item?")) return;
+            showLoading(true);
+            try {
+                await sendUpdate({ bin: currentBin, action: "delete", rowIndex: rowIndex });
+                await fetchInventory();
+            } catch (err) {
+                showError("Failed to delete item.");
+            }
+        }
+
+        // Helper API Poster
+        async function sendUpdate(payload) {
+            const response = await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors", // Google App Script expects no-cors redirect handling
+                headers: { "Content-Type": "text/plain" }, // Avoid preflight OPTIONS check
+                body: JSON.stringify(payload)
+            });
+            // Give API 700ms to process before refreshing UI local state
+            await new Promise(resolve => setTimeout(resolve, 700));
+        }
+
+        function showLoading(show) {
+            const spinner = document.getElementById("loadingSpinner");
+            show ? spinner.classList.remove("hidden") : spinner.classList.add("hidden");
+        }
+
+        function showError(msg) {
+            const alertBox = document.getElementById("errorAlert");
+            alertBox.textContent = msg;
+            alertBox.classList.remove("hidden");
+            setTimeout(() => alertBox.classList.add("hidden"), 5000);
+        }
+
+        // Initialize Fetch on Page Load
+        fetchInventory();
+    </script>
+</body>
+</html>
