@@ -21,42 +21,64 @@
     
 <body class="bg-gray-50 min-h-screen text-gray-800 pb-12 select-none">
 
-    <header class="bg-brand text-gray-900 shadow-md p-4 sticky top-0 z-50">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <img src="bleacher_black.png" alt="Logo" class="h-8 w-auto object-contain">
-                <h1 id="binHeader" class="text-lg font-bold tracking-tight">Production Bin: Loading...</h1>
+    <div id="passwordGate" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center space-y-4">
+            <img src="bleacher_black.png" alt="Logo" class="h-16 mx-auto object-contain">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">System Locked</h2>
+                <p class="text-sm text-gray-500 mt-1">Please enter the security password to view or modify production bins.</p>
             </div>
-            <span id="loadingSpinner" class="animate-spin h-5 w-5 border-2 border-gray-900 border-t-transparent rounded-full hidden"></span>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-3 space-y-3">
-        <div id="errorAlert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative hidden" role="alert"></div>
-
-        <div class="bg-white rounded-xl shadow p-3">
-            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Add New Item</h2>
-            <div class="flex gap-2">
-                <input type="number" id="newItemQty" placeholder="Qty" value="1" 
-                       class="w-14 border border-gray-300 rounded-lg px-2 py-2 text-center text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-                <input type="text" id="newItemName" placeholder="Item name..." 
-                       class="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:outline-none">
-                <button onclick="addNewItem()" 
-                        class="bg-brand hover:bg-brand-hover text-gray-900 px-4 py-2 rounded-lg font-bold transition-all text-sm shrink-0">+</button>
+            <div>
+                <input type="password" id="passwordInput" placeholder="Password" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-sm focus:ring-2 focus:ring-brand focus:outline-none mb-2"
+                       onkeydown="if(event.key === 'Enter') verifyPassword()">
+                <button onclick="verifyPassword()" 
+                        class="w-full bg-brand hover:bg-brand-hover text-gray-900 py-2.5 rounded-lg font-bold transition-all text-sm">
+                    Unlock Access
+                </button>
             </div>
+            <p id="passwordError" class="text-xs text-red-500 font-semibold hidden">Incorrect password. Please try again.</p>
         </div>
+    </div>
 
-        <!-- Inventory List Card -->
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Current Inventory</span>
-                <span id="itemCount" class="text-xs text-gray-500 font-medium">0 items</span>
+    <!-- Main Content App Wrapper (Hidden by default) -->
+    <div id="appContent" class="hidden">
+        <header class="bg-brand text-gray-900 shadow-md p-4 sticky top-0 z-50">
+            <div class="max-w-md mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <img src="bleacher_black.png" alt="Logo" class="h-8 w-auto object-contain">
+                    <h1 id="binHeader" class="text-lg font-bold tracking-tight">Production Bin: Loading...</h1>
+                </div>
+                <span id="loadingSpinner" class="animate-spin h-5 w-5 border-2 border-gray-900 border-t-transparent rounded-full hidden"></span>
             </div>
-            <ul id="inventoryList" class="divide-y divide-gray-100">
-                <li class="p-8 text-center text-gray-400 italic text-sm">No items found. Tap "+" above to log some!</li>
-            </ul>
-        </div>
-    </main>
+        </header>
+
+        <main class="max-w-md mx-auto p-3 space-y-3">
+            <div id="errorAlert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative hidden" role="alert"></div>
+
+            <div class="bg-white rounded-xl shadow p-3">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Add New Item</h2>
+                <div class="flex gap-2">
+                    <input type="number" id="newItemQty" placeholder="Qty" value="1" 
+                           class="w-14 border border-gray-300 rounded-lg px-2 py-2 text-center text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+                    <input type="text" id="newItemName" placeholder="Item name..." 
+                           class="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:outline-none">
+                    <button onclick="addNewItem()" 
+                            class="bg-brand hover:bg-brand-hover text-gray-900 px-4 py-2 rounded-lg font-bold transition-all text-sm shrink-0">+</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Current Inventory</span>
+                    <span id="itemCount" class="text-xs text-gray-500 font-medium">0 items</span>
+                </div>
+                <ul id="inventoryList" class="divide-y divide-gray-100">
+                    <li class="p-8 text-center text-gray-400 italic text-sm">No items found. Tap "+" above to log some!</li>
+                </ul>
+            </div>
+        </main>
+    </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztE36-ep91fpfYaFDzraCC5Hw4qcwcBDew_YxVRPT_ZtsgCVWRxJwQCmiS_NEcSteUYw/exec";
@@ -67,6 +89,35 @@
         document.getElementById("binHeader").textContent = `Selected Production Bin: ${currentBin}`;
 
         let cachedItems = [];
+
+        function checkSavedPassword() {
+            const unlocked = localStorage.getItem("bin_system_unlocked");
+            if (unlocked === "true") {
+                revealApp();
+            }
+        }
+
+        function verifyPassword() {
+            const input = document.getElementById("passwordInput").value;
+            const errorText = document.getElementById("passwordError");
+
+            // PASSWORD IS HERE
+            if (input === "bleacher") {
+                localStorage.setItem("bin_system_unlocked", "true");
+                errorText.classList.add("hidden");
+                revealApp();
+            } else {
+                errorText.classList.remove("hidden");
+                document.getElementById("passwordInput").value = "";
+            }
+        }
+
+        function revealApp() {
+            document.getElementById("passwordGate").classList.add("hidden");
+            document.getElementById("appContent").classList.remove("hidden");
+            fetchInventory(); 
+        }
+        // ------------------------------
 
         async function fetchInventory() {
             showLoading(true);
@@ -204,7 +255,7 @@
             setTimeout(() => alertBox.classList.add("hidden"), 5000);
         }
 
-        fetchInventory();
+        checkSavedPassword();
     </script>
 </body>
 </html>
